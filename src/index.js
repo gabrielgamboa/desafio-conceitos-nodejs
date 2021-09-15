@@ -19,7 +19,7 @@ function checksExistsUserAccount(request, response, next) {
     return next();
   }
 
-  return response.status(400).json({error: 'Usuário não existe no sistena.'});
+  return response.status(404).json({error: 'Usuário não existe no sistema.'});
 }
 
 function getTodoById(todos, todoId) {
@@ -89,10 +89,14 @@ app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
 
   const todo = getTodoById(user.todos, id);
 
-  todo.title = title;
-  todo.deadline = deadline;
+  if (!todo) {
+    return response.status(404).json({error: "todo não identificado."});
+  }
 
-  return response.status(201).send();
+  todo.title = title;
+  todo.deadline = new Date(deadline);
+
+  return response.status(201).json(todo);
 });
 
 //alterar um todo para "done" através do username
@@ -101,13 +105,30 @@ app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
   const { id } = request.params;
 
   const todo = getTodoById(user.todos, id);
-  todo.done = true;
 
-  return response.status(201).send();
+  if (!todo) {
+    return response.status(404).json({error: "todo não identificado."});
+  }
+
+  todo.done = true;
+  return response.status(201).json(todo);
 });
 
+//deletar um todo através do username
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { user } = request;
+  const { id } = request.params;
+
+  const todo = getTodoById(user.todos, id);
+
+  if (!todo) {
+    return response.status(404).json({error: "todo não identificado."});
+  }
+
+  const indexOfTodo = user.todos.indexOf(todo);
+  user.todos.splice(indexOfTodo, 1);
+
+  return response.status(204).json(user.todos);
 });
 
 module.exports = app;
