@@ -12,7 +12,6 @@ const users = [];
 
 function checksExistsUserAccount(request, response, next) {
   const { username } = request.headers;
-  console.log(username);
   const user = users.find(user => user.username === username);
 
   if (user) {
@@ -23,10 +22,24 @@ function checksExistsUserAccount(request, response, next) {
   return response.status(400).json({error: 'Usuário não existe no sistena.'});
 }
 
+function getTodoById(todos, todoId) {
+  const todo = todos.find(todo => todo.id === todoId);
+  if (todo) {
+    return todo;
+  }
+  return null;
+}
+
 //criar um usuário
 app.post('/users', (request, response) => {
   const {name, username} = request.body;
   const id = uuidv4();
+
+  const usernameAlreadyExists = users.some(user => user.username === username);
+
+  if (usernameAlreadyExists) {
+    return response.status(400).json({error: "Este nome de usuário já existe."});
+  }
 
   const user = {
     id,
@@ -68,12 +81,29 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
 
 });
 
+//editar um todo através do username
 app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { title,deadline } = request.body;
+  const { id } = request.params;
+  const { user } = request;
+
+  const todo = getTodoById(user.todos, id);
+
+  todo.title = title;
+  todo.deadline = deadline;
+
+  return response.status(201).send();
 });
 
+//alterar um todo para "done" através do username
 app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { user } = request;
+  const { id } = request.params;
+
+  const todo = getTodoById(user.todos, id);
+  todo.done = true;
+
+  return response.status(201).send();
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
